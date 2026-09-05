@@ -2,7 +2,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { sql } from "drizzle-orm";
 import * as schema from "./schema";
-import { INITIAL_PRODUCTS } from "./seed-data";
+import { INITIAL_PRODUCTS, INITIAL_USERS } from "./seed-data";
 
 if (typeof process.loadEnvFile === "function") {
   try {
@@ -55,6 +55,32 @@ async function seed() {
             rating: sql`excluded.rating`,
             tags: sql`excluded.tags`,
             isFeatured: sql`excluded.is_featured`,
+          },
+        });
+    }
+
+    console.log(`Seeding ${INITIAL_USERS.length} users with RBAC roles (idempotent upsert on email)...`);
+    for (const user of INITIAL_USERS) {
+      await db
+        .insert(schema.users)
+        .values({
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          avatarUrl: user.avatarUrl,
+          passwordHash: user.passwordHash,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+        })
+        .onConflictDoUpdate({
+          target: schema.users.email,
+          set: {
+            name: sql`excluded.name`,
+            role: sql`excluded.role`,
+            avatarUrl: sql`excluded.avatar_url`,
+            passwordHash: sql`excluded.password_hash`,
+            updatedAt: sql`now()`,
           },
         });
     }

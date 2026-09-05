@@ -2,7 +2,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import { eq, sql, asc, desc, and } from "drizzle-orm";
 import postgres from "postgres";
 import * as schema from "./schema";
-import { INITIAL_PRODUCTS, INITIAL_TOOL_STATES } from "./seed-data";
+import { INITIAL_PRODUCTS, INITIAL_TOOL_STATES, INITIAL_USERS } from "./seed-data";
 import type { Product, Order, OrderItem, ToolSavedState, User, NewOrder, NewOrderItem, NewToolSavedState } from "./schema";
 
 /**
@@ -35,8 +35,13 @@ function getOrCreateMemoryStore(): NexusMemoryStore {
       toolMap.set(t.id, { ...t });
     }
 
+    const userMap = new Map<string, User>();
+    for (const u of INITIAL_USERS) {
+      userMap.set(u.id, { ...u });
+    }
+
     globalThis.__nexus_memory_store__ = {
-      users: new Map<string, User>(),
+      users: userMap,
       products: productMap,
       orders: new Map<string, Order>(),
       orderItems: new Map<string, OrderItem>(),
@@ -60,6 +65,41 @@ export const db = queryClient ? drizzle(queryClient, { schema }) : null;
  * Seamlessly routes queries between live Drizzle PostgreSQL and the thread-safe global memory store.
  */
 export const dbRepo = {
+  // --- Users & RBAC ---
+  async getUserByEmail(email: string): Promise<User | null> {
+    if (db) {
+      const [user] = await db
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.email, email.toLowerCase()))
+        .limit(1);
+      return user || null;
+    }
+    for (const u of memoryStore.users.values()) {
+      if (u.email.toLowerCase() === email.toLowerCase()) return u;
+    }
+    return null;
+  },
+
+  async getUserById(id: string): Promise<User | null> {
+    if (db) {
+      const [user] = await db
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.id, id))
+        .limit(1);
+      return user || null;
+    }
+    return memoryStore.users.get(id) || null;
+  },
+
+  async getAllUsers(): Promise<User[]> {
+    if (db) {
+      return await db.select().from(schema.users);
+    }
+    return Array.from(memoryStore.users.values());
+  },
+
   // --- Products ---
   async getProducts(params?: { category?: string; search?: string; sort?: "price_asc" | "price_desc" | "rating" }): Promise<Product[]> {
     if (db) {
