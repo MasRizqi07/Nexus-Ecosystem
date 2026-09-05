@@ -66,7 +66,7 @@ export default function MarketingHomePage() {
             </Link>
           </div>
 
-          {/* Telemetry Metrics Bar */}
+          {/* Architectural Benchmarks Bar */}
           <div className="mt-20 pt-10 border-t border-border/40 grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
             <div>
               <div className="text-2xl sm:text-3xl font-mono font-bold text-nexus-cyan">
@@ -97,7 +97,7 @@ export default function MarketingHomePage() {
                 PostgreSQL
               </div>
               <p className="text-xs text-muted-foreground mt-1 uppercase font-mono">
-                Drizzle In-Memory Pool
+                Live DB &amp; Memory Fallback
               </p>
             </div>
           </div>

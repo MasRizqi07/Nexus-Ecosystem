@@ -8,7 +8,7 @@
 [![Zustand](https://img.shields.io/badge/Zustand-5.0.3-443e38?style=for-the-badge)](https://zustand.docs.pmnd.rs/)
 
 **Nexus Ecosystem** is a unified, production-grade full-stack platform converging four distinct domains into a seamless Next.js 15 App Router web application:
-1. **High-Converting Marketing Landing Page**: SEO & performance-optimized presentation layer with cyberpunk ambient glassmorphism and real-time telemetry metrics.
+1. **High-Converting Marketing Landing Page**: SEO & performance-optimized presentation layer with cyberpunk ambient glassmorphism and illustrative architectural benchmarks.
 2. **Interactive Data & Algorithm Visualizer**: Client-heavy execution engine powered by pure ES6 generator functions (`function*`) with timeline scrubbing, comparisons, swaps, pivots, and dynamic custom array parsing.
 3. **Developer Productivity & Utility Suite**: Real-time JSON Formatter & Schema Linter, Regex Pattern Sandbox with capture groups and string substitution, and live Markdown Split-View Studio with PostgreSQL persistence.
 4. **Micro E-Commerce Catalog & Checkout Flow**: Faceted search filtering, Zustand LocalStorage persisted cart drawer, and a 3-step checkout flow with atomic inventory verification and order persistence.
@@ -101,9 +101,10 @@ Update `.env.local`:
 ```env
 DATABASE_URL="postgresql://user:password@ep-host.region.neon.tech/nexus_db?sslmode=require"
 ```
-Push the schema to your live database:
+Push the schema to your live database and seed catalog data & users:
 ```bash
 pnpm exec drizzle-kit push
+pnpm run db:seed
 ```
 
 ### 3. Development Server
@@ -128,6 +129,9 @@ pnpm run start
 | `pnpm run build` | Compiles optimized production bundle (14 routes) |
 | `pnpm run start` | Runs the production server on port 3000 |
 | `pnpm run typecheck` | Validates TypeScript strict mode (`tsc --noEmit`) |
+| `pnpm run test` | Executes unit and concurrency integration tests via Vitest |
+| `pnpm run lint` | Runs strict Next.js ESLint validation |
+| `pnpm run db:seed` | Idempotently seeds initial catalog products and test accounts |
 | `pnpm exec drizzle-kit push` | Pushes Drizzle schema directly to PostgreSQL |
 | `pnpm exec drizzle-kit studio` | Opens interactive Drizzle Studio database viewer |
 
