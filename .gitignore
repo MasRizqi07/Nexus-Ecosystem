@@ -1,0 +1,35 @@
+# Dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# Testing & Build Outputs
+/.next/
+/out/
+/build
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# Environment Variables
+.env*.local
+.env
+
+# Logs & Diagnostics
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+task-*.log
+
+# OS & IDE Caches
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# AI Agent Artifacts
+.gemini/
+walkthrough.md
+*.webp
