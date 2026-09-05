@@ -162,23 +162,30 @@ export const dbRepo = {
     // If live PostgreSQL connection is active, run via Drizzle transaction
     if (db) {
       return await db.transaction(async (tx) => {
-        // Live DB inventory check & decrement
+        // Live DB atomic inventory check & decrement guard
         for (const item of items) {
-          const [dbProd] = await tx
-            .select()
-            .from(schema.products)
-            .where(eq(schema.products.id, item.productId));
+          const [updated] = await tx
+            .update(schema.products)
+            .set({
+              inventoryCount: sql`${schema.products.inventoryCount} - ${item.quantity}`,
+            })
+            .where(
+              and(
+                eq(schema.products.id, item.productId),
+                sql`${schema.products.inventoryCount} >= ${item.quantity}`
+              )
+            )
+            .returning({
+              id: schema.products.id,
+              name: schema.products.name,
+              inventoryCount: schema.products.inventoryCount,
+            });
 
-          if (!dbProd || dbProd.inventoryCount < item.quantity) {
+          if (!updated) {
             throw new Error(
-              `INSUFFICIENT_STOCK: "${item.productName}" is out of stock in live database.`
+              `INSUFFICIENT_STOCK: "${item.productName}" has insufficient inventory available in live database.`
             );
           }
-
-          await tx
-            .update(schema.products)
-            .set({ inventoryCount: dbProd.inventoryCount - item.quantity })
-            .where(eq(schema.products.id, item.productId));
         }
 
         const [createdOrder] = await tx
