@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { sql } from "drizzle-orm";

@@ -1,0 +1,13 @@
+{
+  "extends": ["next/core-web-vitals", "next/typescript"],
+  "rules": {
+    "no-console": ["warn", { "allow": ["warn", "error"] }]
+  },
+  "ignorePatterns": [
+    ".next/",
+    "node_modules/",
+    "dist/",
+    "drizzle/",
+    "scripts/"
+  ]
+}

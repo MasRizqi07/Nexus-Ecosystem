@@ -1,0 +1,41 @@
+name: Nexus Ecosystem CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Typecheck, Lint & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Verify TypeScript Types
+        run: npm run typecheck
+
+      - name: Run Next.js Strict ESLint
+        run: npm run lint
+
+      - name: Execute Vitest Test Suite
+        run: npm run test
+
+      - name: Execute Production Build
+        run: npm run build
