@@ -1,5 +1,5 @@
 import { drizzle } from "drizzle-orm/postgres-js";
-import { eq } from "drizzle-orm";
+import { eq, sql, asc, desc, and } from "drizzle-orm";
 import postgres from "postgres";
 import * as schema from "./schema";
 import { INITIAL_PRODUCTS, INITIAL_TOOL_STATES } from "./seed-data";
@@ -62,6 +62,42 @@ export const db = queryClient ? drizzle(queryClient, { schema }) : null;
 export const dbRepo = {
   // --- Products ---
   async getProducts(params?: { category?: string; search?: string; sort?: "price_asc" | "price_desc" | "rating" }): Promise<Product[]> {
+    if (db) {
+      const conditions = [];
+
+      if (params?.category && params.category !== "All") {
+        conditions.push(sql`lower(${schema.products.category}) = ${params.category.toLowerCase()}`);
+      }
+
+      if (params?.search && params.search.trim()) {
+        const q = `%${params.search.toLowerCase().trim()}%`;
+        conditions.push(
+          sql`(lower(${schema.products.name}) LIKE ${q} OR lower(${schema.products.description}) LIKE ${q} OR ${schema.products.tags}::text ILIKE ${q})`
+        );
+      }
+
+      const whereClause = conditions.length > 0 ? (conditions.length === 1 ? conditions[0] : and(...conditions)) : undefined;
+      const orderByClause =
+        params?.sort === "price_asc"
+          ? asc(schema.products.price)
+          : params?.sort === "price_desc"
+          ? desc(schema.products.price)
+          : params?.sort === "rating"
+          ? desc(schema.products.rating)
+          : undefined;
+
+      const query = db.select().from(schema.products);
+      if (whereClause && orderByClause) {
+        return await query.where(whereClause).orderBy(orderByClause);
+      } else if (whereClause) {
+        return await query.where(whereClause);
+      } else if (orderByClause) {
+        return await query.orderBy(orderByClause);
+      } else {
+        return await query;
+      }
+    }
+
     let list = Array.from(memoryStore.products.values());
 
     if (params?.category && params.category !== "All") {
@@ -86,6 +122,15 @@ export const dbRepo = {
   },
 
   async getProductBySlug(slug: string): Promise<Product | null> {
+    if (db) {
+      const [prod] = await db
+        .select()
+        .from(schema.products)
+        .where(eq(schema.products.slug, slug))
+        .limit(1);
+      return prod || null;
+    }
+
     for (const p of memoryStore.products.values()) {
       if (p.slug === slug) return p;
     }
@@ -93,6 +138,15 @@ export const dbRepo = {
   },
 
   async getProductById(id: string): Promise<Product | null> {
+    if (db) {
+      const [prod] = await db
+        .select()
+        .from(schema.products)
+        .where(eq(schema.products.id, id))
+        .limit(1);
+      return prod || null;
+    }
+
     return memoryStore.products.get(id) || null;
   },
 
@@ -103,19 +157,6 @@ export const dbRepo = {
   ): Promise<{ order: Order; items: OrderItem[] }> {
     if (items.length === 0) {
       throw new Error("CANNOT_ORDER_EMPTY_CART: Order must contain at least one line item.");
-    }
-
-    // --- Atomic Inventory Pre-flight Check ---
-    for (const item of items) {
-      const prod = memoryStore.products.get(item.productId);
-      if (!prod) {
-        throw new Error(`PRODUCT_NOT_FOUND: Product "${item.productName}" (ID: ${item.productId}) does not exist.`);
-      }
-      if (prod.inventoryCount < item.quantity) {
-        throw new Error(
-          `INSUFFICIENT_STOCK: "${prod.name}" has only ${prod.inventoryCount} units available, but ${item.quantity} were requested.`
-        );
-      }
     }
 
     // If live PostgreSQL connection is active, run via Drizzle transaction
@@ -174,7 +215,19 @@ export const dbRepo = {
       });
     }
 
-    // --- Thread-Safe Atomic Memory Store Mutation ---
+    // --- Thread-Safe Atomic Memory Store Mutation (Fallback) ---
+    for (const item of items) {
+      const prod = memoryStore.products.get(item.productId);
+      if (!prod) {
+        throw new Error(`PRODUCT_NOT_FOUND: Product "${item.productName}" (ID: ${item.productId}) does not exist.`);
+      }
+      if (prod.inventoryCount < item.quantity) {
+        throw new Error(
+          `INSUFFICIENT_STOCK: "${prod.name}" has only ${prod.inventoryCount} units available, but ${item.quantity} were requested.`
+        );
+      }
+    }
+
     const orderId = crypto.randomUUID();
     const now = new Date();
 
@@ -223,6 +276,13 @@ export const dbRepo = {
   },
 
   async getOrderById(id: string): Promise<{ order: Order; items: OrderItem[] } | null> {
+    if (db) {
+      const [order] = await db.select().from(schema.orders).where(eq(schema.orders.id, id)).limit(1);
+      if (!order) return null;
+      const items = await db.select().from(schema.orderItems).where(eq(schema.orderItems.orderId, id));
+      return { order, items };
+    }
+
     const order = memoryStore.orders.get(id);
     if (!order) return null;
 
