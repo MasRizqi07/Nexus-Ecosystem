@@ -90,6 +90,7 @@ export const INITIAL_PRODUCTS: Product[] = [
 export const INITIAL_TOOL_STATES: ToolSavedState[] = [
   {
     id: "t1a2b3c4-d5e6-4a1b-8c2d-3e4f5a6b7c8d",
+    clientId: null,
     toolType: "JSON",
     title: "Kubernetes Deployment Spec Template",
     stateData: {
@@ -119,6 +120,7 @@ export const INITIAL_TOOL_STATES: ToolSavedState[] = [
   },
   {
     id: "t2b3c4d5-e6f1-4b2c-9d3e-4f5a6b7c8d9e",
+    clientId: null,
     toolType: "REGEX",
     title: "SemVer & Semantic Release Pattern",
     stateData: {
@@ -131,6 +133,7 @@ export const INITIAL_TOOL_STATES: ToolSavedState[] = [
   },
   {
     id: "t3c4d5e6-f1a2-4c3d-ae4f-5a6b7c8d9e0f",
+    clientId: null,
     toolType: "MARKDOWN",
     title: "Nexus High-Throughput Architecture Spec",
     stateData: {

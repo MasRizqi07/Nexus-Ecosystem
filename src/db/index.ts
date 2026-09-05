@@ -338,10 +338,26 @@ export const dbRepo = {
   },
 
   // --- Developer Tool Saved States ---
-  async getToolStates(toolType?: "JSON" | "REGEX" | "MARKDOWN"): Promise<ToolSavedState[]> {
-    const all = Array.from(memoryStore.toolSavedStates.values());
+  async getToolStates(toolType?: "JSON" | "REGEX" | "MARKDOWN", clientId?: string): Promise<ToolSavedState[]> {
+    if (!clientId) {
+      return [];
+    }
+
+    if (db) {
+      const conditions = [eq(schema.toolSavedStates.clientId, clientId)];
+      if (toolType) {
+        conditions.push(eq(schema.toolSavedStates.toolType, toolType));
+      }
+      return await db
+        .select()
+        .from(schema.toolSavedStates)
+        .where(conditions.length === 1 ? conditions[0] : and(...conditions))
+        .orderBy(desc(schema.toolSavedStates.updatedAt));
+    }
+
+    let all = Array.from(memoryStore.toolSavedStates.values()).filter((s) => s.clientId === clientId);
     if (toolType) {
-      return all.filter((s) => s.toolType === toolType).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+      all = all.filter((s) => s.toolType === toolType);
     }
     return all.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
   },
@@ -350,8 +366,25 @@ export const dbRepo = {
     const id = crypto.randomUUID();
     const now = new Date();
 
+    if (db) {
+      const [saved] = await db
+        .insert(schema.toolSavedStates)
+        .values({
+          id,
+          clientId: data.clientId || null,
+          toolType: data.toolType,
+          title: data.title,
+          stateData: data.stateData,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .returning();
+      return saved;
+    }
+
     const record: ToolSavedState = {
       id,
+      clientId: data.clientId || null,
       toolType: data.toolType,
       title: data.title,
       stateData: data.stateData,
@@ -363,7 +396,19 @@ export const dbRepo = {
     return record;
   },
 
-  async deleteToolState(id: string): Promise<boolean> {
-    return memoryStore.toolSavedStates.delete(id);
+  async deleteToolState(id: string, clientId?: string): Promise<boolean> {
+    if (db) {
+      const condition = clientId
+        ? and(eq(schema.toolSavedStates.id, id), eq(schema.toolSavedStates.clientId, clientId))
+        : eq(schema.toolSavedStates.id, id);
+      const res = await db.delete(schema.toolSavedStates).where(condition).returning({ id: schema.toolSavedStates.id });
+      return res.length > 0;
+    }
+
+    const state = memoryStore.toolSavedStates.get(id);
+    if (state && (!clientId || state.clientId === clientId)) {
+      return memoryStore.toolSavedStates.delete(id);
+    }
+    return false;
   },
 };

@@ -85,6 +85,7 @@ export const orderItems = pgTable("order_items", {
  */
 export const toolSavedStates = pgTable("tool_saved_states", {
   id: uuid("id").defaultRandom().primaryKey(),
+  clientId: varchar("client_id", { length: 128 }),
   toolType: varchar("tool_type", { length: 50 }).notNull(), // 'JSON' | 'REGEX' | 'MARKDOWN'
   title: varchar("title", { length: 255 }).notNull(),
   stateData: jsonb("state_data").notNull(),
