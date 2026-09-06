@@ -13,6 +13,7 @@ import {
   Info,
   Layers,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useVisualizerStore } from "@/stores/use-visualizer-store";
 import { ALGORITHM_METADATA } from "@/lib/visualizer-engine";
 import { Button } from "@/components/ui/button";
@@ -94,7 +95,12 @@ export default function VisualizerPage() {
   return (
     <div className="space-y-6">
       {/* Top Header & Algorithm Selector */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-border/60">
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-border/60"
+      >
         <div>
           <div className="flex items-center gap-2">
             <Badge variant="cyan" className="font-mono text-[10px]">
@@ -110,25 +116,40 @@ export default function VisualizerPage() {
         </div>
 
         {/* Algorithm Tabs */}
-        <div className="flex flex-wrap gap-1.5 p-1 rounded-xl bg-nexus-surface/80 border border-border/60">
-          {ALGORITHMS.map((algo) => (
-            <button
-              key={algo.id}
-              onClick={() => setAlgorithm(algo.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                algorithm === algo.id
-                  ? "bg-nexus-cyan text-background font-bold shadow-md shadow-nexus-cyan/20"
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
-              }`}
-            >
-              {algo.label}
-            </button>
-          ))}
+        <div className="flex flex-wrap gap-1.5 p-1 rounded-xl bg-nexus-surface/80 border border-border/60 relative">
+          {ALGORITHMS.map((algo) => {
+            const isActive = algorithm === algo.id;
+            return (
+              <button
+                key={algo.id}
+                onClick={() => setAlgorithm(algo.id)}
+                className={`relative px-4 py-2 rounded-lg text-xs font-medium transition-colors ${
+                  isActive
+                    ? "text-background font-bold"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+                }`}
+              >
+                {isActive && (
+                  <motion.div
+                    layoutId="active-algorithm"
+                    className="absolute inset-0 bg-nexus-cyan rounded-lg shadow-md shadow-nexus-cyan/30"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+                <span className="relative z-10">{algo.label}</span>
+              </button>
+            );
+          })}
         </div>
-      </div>
+      </motion.div>
 
       {/* Primary Control Console */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-nexus-surface/80 border border-border/80 backdrop-blur-md space-y-4">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
+        className="p-4 sm:p-5 rounded-2xl bg-nexus-surface/80 border border-border/80 backdrop-blur-md space-y-4"
+      >
         <div className="flex flex-wrap items-center justify-between gap-4">
           {/* Playback Transport Buttons */}
           <div className="flex items-center gap-2">
@@ -249,11 +270,16 @@ export default function VisualizerPage() {
         </div>
 
         {/* Custom Array Input Modal / Form */}
-        {customInputOpen && (
-          <form
-            onSubmit={handleCustomInputSubmit}
-            className="p-4 rounded-xl bg-nexus-dark/90 border border-nexus-cyan/30 space-y-3 animate-in fade-in duration-200"
-          >
+        <AnimatePresence>
+          {customInputOpen && (
+            <motion.form
+              initial={{ opacity: 0, height: 0, scale: 0.95 }}
+              animate={{ opacity: 1, height: "auto", scale: 1 }}
+              exit={{ opacity: 0, height: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              onSubmit={handleCustomInputSubmit}
+              className="p-4 rounded-xl bg-nexus-dark/90 border border-nexus-cyan/30 space-y-3 overflow-hidden origin-top"
+            >
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
                 <Sliders className="w-3.5 h-3.5 text-nexus-cyan" />
@@ -295,12 +321,18 @@ export default function VisualizerPage() {
                 Apply Array
               </Button>
             </div>
-          </form>
+          </motion.form>
         )}
-      </div>
+        </AnimatePresence>
+      </motion.div>
 
       {/* Main Visualizer Canvas Area */}
-      <div className="p-6 rounded-3xl bg-nexus-surface/60 border border-border/80 shadow-2xl space-y-4">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6, delay: 0.2, type: "spring", bounce: 0.3 }}
+        className="p-6 rounded-3xl bg-nexus-surface/60 border border-border/80 shadow-2xl space-y-4"
+      >
         {/* Step Explanation Banner */}
         <div className="p-3.5 rounded-xl bg-nexus-dark/80 border border-border/60 flex items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2 min-w-0">
@@ -351,20 +383,28 @@ export default function VisualizerPage() {
             }
 
             return (
-              <div
-                key={idx}
-                className="flex-1 flex flex-col items-center justify-end h-full group"
+              <motion.div
+                key={value + "-" + idx} // Value and idx to ensure robust animation on random changes
+                layout
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ 
+                  layout: { type: "spring", stiffness: 300, damping: 25 },
+                  opacity: { duration: 0.2 } 
+                }}
+                className="flex-1 flex flex-col items-center justify-end h-full group relative"
               >
-                <div
-                  className={`w-full rounded-t-md border-t border-x transition-all duration-150 ${barColor} ${glow}`}
+                <motion.div
+                  layout
+                  className={`w-full rounded-t-md border-t border-x transition-colors duration-150 ${barColor} ${glow}`}
                   style={{ height: `${heightPercent}%` }}
                 />
                 {currentStep.array.length <= 30 && (
-                  <span className="mt-1 font-mono text-[9px] text-muted-foreground group-hover:text-nexus-cyan">
+                  <span className="absolute -bottom-5 font-mono text-[9px] text-muted-foreground group-hover:text-nexus-cyan transition-colors">
                     {value}
                   </span>
                 )}
-              </div>
+              </motion.div>
             );
           })}
         </div>
@@ -411,10 +451,15 @@ export default function VisualizerPage() {
             aria-label="Timeline Step Scrubber"
           />
         </div>
-      </div>
+      </motion.div>
 
       {/* Algorithm Metadata & Complexity Specs */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.3, ease: "easeOut" }}
+        className="grid grid-cols-1 md:grid-cols-3 gap-6"
+      >
         <Card className="border-border/80 md:col-span-2">
           <CardContent className="p-6 space-y-3">
             <div className="flex items-center gap-2">
@@ -452,7 +497,7 @@ export default function VisualizerPage() {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
     </div>
   );
 }

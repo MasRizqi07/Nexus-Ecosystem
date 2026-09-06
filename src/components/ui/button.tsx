@@ -1,5 +1,8 @@
+"use client";
+
 import React from "react";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -56,11 +59,15 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     }[variant];
 
     return (
-      <button
+      <motion.button
         ref={ref}
         disabled={disabled || isLoading}
+        whileHover={disabled || isLoading ? {} : { scale: 1.02 }}
+        whileTap={disabled || isLoading ? {} : { scale: 0.97 }}
+        transition={{ type: "spring", stiffness: 400, damping: 25 }}
         className={cn(baseStyles, sizeStyles, variantStyles, className)}
-        {...props}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {...(props as any)}
       >
         {isLoading && (
           <svg
@@ -85,7 +92,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           </svg>
         )}
         {children}
-      </button>
+      </motion.button>
     );
   }
 );

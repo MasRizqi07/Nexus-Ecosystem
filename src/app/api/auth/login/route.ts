@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { dbRepo } from "@/db";
 import { createSessionToken, verifyPassword, SESSION_COOKIE_NAME } from "@/lib/auth";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const loginSchema = z.object({
   email: z.string().email("Please provide a valid email address"),
@@ -10,6 +11,16 @@ const loginSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
+    const rateLimit = checkRateLimit(`login_${ip}`, 5, 60);
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { success: false, error: "RATE_LIMIT_EXCEEDED", message: "Too many login attempts. Try again later." },
+        { status: 429, headers: { "Retry-After": rateLimit.reset.toString() } }
+      );
+    }
+
     const rawBody: unknown = await request.json();
     const result = loginSchema.safeParse(rawBody);
 

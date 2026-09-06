@@ -337,6 +337,35 @@ export const dbRepo = {
     return { order, items };
   },
 
+  async getOrdersByCustomerEmail(email: string): Promise<{ order: Order; itemCount: number }[]> {
+    if (db) {
+      const userOrders = await db
+        .select()
+        .from(schema.orders)
+        .where(eq(schema.orders.customerEmail, email.toLowerCase()))
+        .orderBy(desc(schema.orders.createdAt));
+      
+      const result = [];
+      for (const order of userOrders) {
+        const items = await db.select().from(schema.orderItems).where(eq(schema.orderItems.orderId, order.id));
+        result.push({ order, itemCount: items.reduce((acc, item) => acc + item.quantity, 0) });
+      }
+      return result;
+    }
+
+    const allOrders = Array.from(memoryStore.orders.values())
+      .filter((o) => o.customerEmail.toLowerCase() === email.toLowerCase())
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+    const result = [];
+    for (const order of allOrders) {
+      const items = Array.from(memoryStore.orderItems.values()).filter((i) => i.orderId === order.id);
+      result.push({ order, itemCount: items.reduce((acc, item) => acc + item.quantity, 0) });
+    }
+    
+    return result;
+  },
+
   // --- Developer Tool Saved States ---
   async getToolStates(toolType?: "JSON" | "REGEX" | "MARKDOWN", clientId?: string): Promise<ToolSavedState[]> {
     if (!clientId) {

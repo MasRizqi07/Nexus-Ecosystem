@@ -39,6 +39,13 @@ export const metadata: Metadata = {
       "Modern full-stack platform uniting algorithm visualization, dev utilities, and high-performance commerce.",
     type: "website",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Nexus Ecosystem",
+    description:
+      "Production-grade platform converging high-performance marketing, interactive algorithm visualization, developer productivity tools, and micro e-commerce.",
+    creator: "@NexusArchitect",
+  },
 };
 
 export default function RootLayout({

@@ -15,6 +15,8 @@ import {
   Menu,
   X,
   UserCheck,
+  Package,
+  ShieldAlert,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -28,7 +30,9 @@ interface NavItem {
 
 const CORE_NAV: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Order History", href: "/orders", icon: Package },
   { name: "Algorithm Visualizer", href: "/visualizer", icon: Binary, badge: "Interactive" },
+  { name: "Admin Console", href: "/admin", icon: ShieldAlert, badge: "Omega" },
 ];
 
 const TOOLS_NAV: NavItem[] = [

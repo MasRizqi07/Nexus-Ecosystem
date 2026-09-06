@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { dbRepo } from "@/db";
 import { checkoutSchema } from "@/lib/validators";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const orderItemsPayloadSchema = z.array(
   z.object({
@@ -18,6 +19,16 @@ const checkoutPayloadSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
+    const rateLimit = checkRateLimit(`checkout_${ip}`, 10, 60);
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { success: false, error: "RATE_LIMIT_EXCEEDED", message: "Too many checkout requests. Try again later." },
+        { status: 429, headers: { "Retry-After": rateLimit.reset.toString() } }
+      );
+    }
+
     const rawBody: unknown = await request.json();
 
     // 1. Strict Zod Boundary Validation
