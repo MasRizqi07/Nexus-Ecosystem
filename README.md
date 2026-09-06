@@ -30,17 +30,25 @@ src/
 │   │   ├── layout.tsx              # Commerce layout with Cart Drawer trigger & badge
 │   │   ├── catalog/page.tsx        # Faceted search, filtering, and sorting
 │   │   ├── catalog/[slug]/page.tsx # Dynamic product specs & Add to Cart
-│   │   └── checkout/page.tsx       # 3-step checkout wizard with confirmation receipt
-│   ├── (workspace)/                # Developer application domain
+│   │   ├── checkout/page.tsx       # 3-step checkout wizard with confirmation receipt
+│   │   └── orders/page.tsx         # Customer order history & shipping status
+│   ├── (workspace)/                # Developer application & administrative domain
 │   │   ├── layout.tsx              # Sidebar navigation, active route indicators, breadcrumbs
 │   │   ├── dashboard/page.tsx      # System health & utility launchpad
+│   │   ├── admin/page.tsx          # Administrator control plane & user roster
 │   │   ├── visualizer/page.tsx     # Algorithm Visualizer console & canvas bars
 │   │   └── tools/                  # Developer productivity tools
 │   │       ├── json-formatter/page.tsx # AST validation, beautify, minify, DB save
 │   │       ├── regex-tester/page.tsx   # Pattern matching, groups table, substitution
 │   │       └── markdown-editor/page.tsx# Split-screen editor, sanitized preview, .md export
 │   ├── api/
+│   │   ├── admin/metrics/route.ts  # Role-gated telemetry & user roster metrics
+│   │   ├── auth/
+│   │   │   ├── login/route.ts      # Rate-limited credential validation & session issue
+│   │   │   ├── logout/route.ts     # Cookie invalidation endpoint
+│   │   │   └── me/route.ts         # Session verification & user profile retrieval
 │   │   ├── checkout/route.ts       # Atomic order mutation & inventory verification
+│   │   ├── orders/route.ts         # Authenticated customer order retrieval
 │   │   └── tools/save/route.ts     # Developer tool state persistence endpoint
 │   ├── globals.css                 # Cyber dark theme tokens & glassmorphic utilities
 │   ├── layout.tsx                  # Root shell, typography, global toast container
@@ -56,6 +64,9 @@ src/
 │   ├── schema.ts                   # Tables: Users, Products, Orders, OrderItems, ToolSavedStates
 │   └── seed-data.ts                # Initial catalog products & tool presets
 ├── lib/
+│   ├── auth.ts                     # bcrypt password hashing & HMAC-SHA256 session token management
+│   ├── env.ts                      # Fail-fast environment variable validation
+│   ├── rate-limit.ts               # In-memory sliding window rate limiter
 │   ├── utils.ts                    # cn(), formatCentsToUsd(), formatRating(), debounce()
 │   ├── validators/                 # Zod boundary schemas (checkout, custom array, tool state)
 │   └── visualizer-engine/          # Pure TS sorting generators (Bubble, Selection, Insertion, Merge, Quick)
@@ -93,6 +104,12 @@ pnpm install
 ```
 
 ### 2. Environment Setup (Optional)
+
+> **Note:** Without `DATABASE_URL`, the app uses an in-process memory store for local development only.
+> On serverless platforms (Vercel), each function instance gets its own memory and state does not
+> persist across cold starts or scale-out. Set `DATABASE_URL` before deploying anywhere real traffic
+> or real orders are expected.
+
 The application runs immediately out-of-the-box using the built-in memory store. To connect a live PostgreSQL database (Neon / Supabase / Local):
 ```bash
 cp .env.example .env.local

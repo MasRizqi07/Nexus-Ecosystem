@@ -60,6 +60,26 @@ export const isLiveDb = Boolean(connectionString && connectionString.startsWith(
 const queryClient = isLiveDb ? postgres(connectionString as string) : null;
 export const db = queryClient ? drizzle(queryClient, { schema }) : null;
 
+import { hashPassword } from "@/lib/auth";
+
+let warnedMemoryAuth = false;
+async function ensureMemoryUserPassword(u: User): Promise<User> {
+  if (u.passwordHash === null) {
+    const password =
+      u.role === "ADMIN" ? process.env.SEED_ADMIN_PASSWORD : process.env.SEED_DEV_PASSWORD;
+    if (password) {
+      if (!warnedMemoryAuth) {
+        console.warn(
+          "[WARN] [in-memory-store] Computing password hash for memory-store demo user at runtime from environment variable. Do not use in-memory store in production!"
+        );
+        warnedMemoryAuth = true;
+      }
+      u.passwordHash = await hashPassword(password);
+    }
+  }
+  return u;
+}
+
 /**
  * UNIFIED DATABASE REPOSITORY ABSTRACTION
  * Seamlessly routes queries between live Drizzle PostgreSQL and the thread-safe global memory store.
@@ -76,7 +96,10 @@ export const dbRepo = {
       return user || null;
     }
     for (const u of memoryStore.users.values()) {
-      if (u.email.toLowerCase() === email.toLowerCase()) return u;
+      if (u.email.toLowerCase() === email.toLowerCase()) {
+        await ensureMemoryUserPassword(u);
+        return u;
+      }
     }
     return null;
   },
@@ -90,14 +113,23 @@ export const dbRepo = {
         .limit(1);
       return user || null;
     }
-    return memoryStore.users.get(id) || null;
+    const user = memoryStore.users.get(id);
+    if (user) {
+      await ensureMemoryUserPassword(user);
+      return user;
+    }
+    return null;
   },
 
   async getAllUsers(): Promise<User[]> {
     if (db) {
       return await db.select().from(schema.users);
     }
-    return Array.from(memoryStore.users.values());
+    const users = Array.from(memoryStore.users.values());
+    for (const u of users) {
+      await ensureMemoryUserPassword(u);
+    }
+    return users;
   },
 
   // --- Products ---

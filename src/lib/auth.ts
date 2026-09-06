@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
+import bcrypt from "bcryptjs";
+import { AUTH_SECRET } from "./env";
 
-const AUTH_SALT = process.env.AUTH_SALT || "nexus_auth_salt_v1";
-const AUTH_SECRET = process.env.AUTH_SECRET || "nexus-ecosystem-jwt-secret-key-production-32-chars";
 export const SESSION_COOKIE_NAME = "nexus_session";
 
 export interface SessionUser {
@@ -11,36 +11,14 @@ export interface SessionUser {
   role: "USER" | "ADMIN";
 }
 
-/**
- * Derives a PBKDF2 SHA-256 hash using native Web Crypto API.
- */
+const BCRYPT_COST_FACTOR = 12; // ~250ms/hash on typical serverless CPU — deliberate, not arbitrary
+
 export async function hashPassword(password: string): Promise<string> {
-  const enc = new TextEncoder();
-  const keyMaterial = await crypto.subtle.importKey(
-    "raw",
-    enc.encode(password),
-    { name: "PBKDF2" },
-    false,
-    ["deriveBits"]
-  );
-
-  const derived = await crypto.subtle.deriveBits(
-    {
-      name: "PBKDF2",
-      salt: enc.encode(AUTH_SALT),
-      iterations: 10000,
-      hash: "SHA-256",
-    },
-    keyMaterial,
-    256
-  );
-
-  return Buffer.from(derived).toString("hex");
+  return bcrypt.hash(password, BCRYPT_COST_FACTOR);
 }
 
 export async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
-  const computedHash = await hashPassword(password);
-  return computedHash === storedHash;
+  return bcrypt.compare(password, storedHash);
 }
 
 /**

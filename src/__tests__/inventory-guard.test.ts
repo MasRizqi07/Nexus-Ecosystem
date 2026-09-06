@@ -1,15 +1,18 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { dbRepo } from "@/db";
+import { dbRepo, db } from "@/db";
+import { products } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 describe("Inventory Guard & Concurrency Protection", () => {
   const testProductId = "b2c3d4e5-f6a1-4b2c-9d3e-4f5a6b7c8d9e"; // Quantum 75% Mechanical Deck
 
   beforeEach(async () => {
-    // Ensure product has a known initial stock
-    const product = await dbRepo.getProductById(testProductId);
-    if (product) {
-      // Seeded product exists
-      expect(product).toBeDefined();
+    // Reset test product to a known initial stock
+    if (db) {
+      await db.update(products).set({ inventoryCount: 42 }).where(eq(products.id, testProductId));
+    } else {
+      const product = await dbRepo.getProductById(testProductId);
+      if (product) product.inventoryCount = 42;
     }
   });
 

@@ -151,7 +151,7 @@ export const INITIAL_USERS: User[] = [
     name: "Nexus System Administrator",
     role: "ADMIN",
     avatarUrl: null,
-    passwordHash: "108183081929743e4e09a8cdcac534af46a6863b5803196488b8af66fb735e01", // admin123
+    passwordHash: null,
     createdAt: new Date("2025-01-01T00:00:00.000Z"),
     updatedAt: new Date("2025-01-01T00:00:00.000Z"),
   },
@@ -161,7 +161,7 @@ export const INITIAL_USERS: User[] = [
     name: "Nexus Verified Developer",
     role: "USER",
     avatarUrl: null,
-    passwordHash: "8a01735c15c2db17386d8e68eb12db6dced7675989e6ca4aa1d8143560cd3f71", // dev123
+    passwordHash: null,
     createdAt: new Date("2025-01-01T00:00:00.000Z"),
     updatedAt: new Date("2025-01-01T00:00:00.000Z"),
   },

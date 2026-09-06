@@ -1,3 +1,12 @@
+if (typeof process.loadEnvFile === "function") {
+  try {
+    process.loadEnvFile();
+  } catch {}
+}
+
+const devPassword = process.env.SEED_DEV_PASSWORD || "dev123";
+const adminPassword = process.env.SEED_ADMIN_PASSWORD || "admin123";
+
 async function runAuthRBACTest() {
   console.log("=================================================");
   console.log("PHASE 3 AUTH & RBAC VERIFICATION TEST");
@@ -16,7 +25,7 @@ async function runAuthRBACTest() {
   const devLoginRes = await fetch("http://localhost:3000/api/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: "developer@nexus.dev", password: "dev123" }),
+    body: JSON.stringify({ email: "developer@nexus.dev", password: devPassword }),
   });
   const devLoginData = await devLoginRes.json();
   const devCookie = devLoginRes.headers.get("set-cookie");
@@ -54,7 +63,7 @@ async function runAuthRBACTest() {
   const adminLoginRes = await fetch("http://localhost:3000/api/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: "admin@nexus.dev", password: "admin123" }),
+    body: JSON.stringify({ email: "admin@nexus.dev", password: adminPassword }),
   });
   const adminLoginData = await adminLoginRes.json();
   const adminCookie = adminLoginRes.headers.get("set-cookie");
